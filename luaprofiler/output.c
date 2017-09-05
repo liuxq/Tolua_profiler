@@ -216,7 +216,6 @@ void lprofP_output()
 
 void lprofP_close()
 {
-	return;
 	lprofP_OUTPUT pCurrent = NULL;
 	if(pOutputBuffer)
 	{
