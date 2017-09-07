@@ -354,7 +354,7 @@ void lprofT_tojson()
 		jstring = cJSON_Print(root);
 		lprofP_addData(jstring);
 		cJSON_Delete(root);
-		dPreFrameLuaConsuming += topFuncs;
+		dPreFrameLuaConsuming += dLuaConsuming;
 		dPreFrameFunConsuming += dFunConsuming;
 		pTreeRoot = NULL;
 	}

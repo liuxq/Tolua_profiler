@@ -279,6 +279,20 @@ static int profiler_start(lua_State *L) {
 	lprofP_STATE* S;
 	const char* outfile;
 
+
+	/*lua_getfield(L, LUA_GLOBALSINDEX, "ProfFilter");
+	lua_pushstring(L, ar->name);
+	lua_pushstring(L, ar->source);
+	lua_call(L, 2, 1);
+	int isvalid = lua_tonumber(L, -1);
+	lua_pop(L, 1);
+	if (!isvalid)
+	{
+	lua_pop(L, 1);
+	return;
+	}*/
+	
+
 	lua_pushlightuserdata(L, &profstate_id);
 	lua_gettable(L, LUA_REGISTRYINDEX);
 	if(!lua_isnil(L, -1)) {

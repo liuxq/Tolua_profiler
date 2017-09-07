@@ -86,9 +86,12 @@ static void formats(char *s) {
 */
 int filter_lua_api(char* func_name)
 {
-	static char *lua_api[] = {
+	/*static char *lua_api[] = {
 		"assert", "unpack", "__index", "__newindex", "setmetatable", "getmetatable", "rawget", "type",
-		"remove", NULL };
+		"remove", NULL };*/
+
+	static char *lua_api[] = {
+		"Tick" };
 
 	char **p = lua_api;
 	while (*p != NULL)
@@ -108,7 +111,7 @@ int filter_lua_api(char* func_name)
 void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedefined, int currentline,char* what, char* cFun, lprof_DebugInfo* dbg_info) 
 {
   // 过滤lua api操作 2016-08-10 lennon.c
-	if (func_name && filter_lua_api(func_name))
+	if (!func_name || !filter_lua_api(func_name))
 		return;
 
   S->stack_level++;
@@ -122,7 +125,7 @@ void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedef
 int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 	// 过滤lua api操作 2016-08-10 lennon.c
 	
-	if (dbg_info->p_name && filter_lua_api(dbg_info->p_name))
+	if (!dbg_info->p_name || !filter_lua_api(dbg_info->p_name))
 		return 0;
 
 	if (!S->stack_top)

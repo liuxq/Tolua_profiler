@@ -6,7 +6,7 @@
 #include "output.h"
 
 
-int nWriteFile = 0;
+int nWriteFile = 1;
 
 int nMaxCacheNode = 2;
 int nCacheNode = 0;
