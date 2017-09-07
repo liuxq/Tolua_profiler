@@ -427,7 +427,7 @@ static int profiler_stop(lua_State *L) {
 		/* leave all functions under execution */
 		//while (lprofP_callhookOUT(S))
 			;
-		//lprofP_close_core_profiler(S);
+		lprofP_close_core_profiler(S);
 		lua_pushlightuserdata(L, &profstate_id);
 		lua_pushnil(L);
 		lua_settable(L, LUA_REGISTRYINDEX);
