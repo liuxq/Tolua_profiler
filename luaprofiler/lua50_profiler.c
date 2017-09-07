@@ -49,7 +49,7 @@ double stat_hook_cost_ts = 0;
 double stat_frame_cost_ts = 0;
 int    stat_hook_call_cnt = 0;
 
-static int g_multithread = 1;
+static int g_multithread = 0;
 lprofP_STATE* g_S = NULL;
 // �������У�һ��һ��������
 QUEUE g_nolock_queue;
