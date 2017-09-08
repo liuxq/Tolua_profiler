@@ -1,4 +1,5 @@
 #include "lp.h"
+#include "stack.h"
 #include "queue.h"
 #include "stdlib.h"
 #include <stdio.h>
@@ -140,24 +141,13 @@ int queue_pop(QUEUE *queue, void **node)
 int queue_push_without_alloc(QUEUE *queue, void *data)
 {
     int ret_val = SUCCESS;
-	static FILE* s_file = NULL;
-
     sd_assert(queue != NULL);
-
-	 
 
     while(QINT_VALUE(queue->_queue_size) >= QINT_VALUE(queue->_queue_actual_capacity))
     {
 		SLEEP_SHORT_TIME();
 
-		if(s_file == NULL){
-			char tmpbuf[256];
-			sprintf(tmpbuf, "luaprofiler.busy.%d.txt", (int)GETPID());
-			s_file = fopen(tmpbuf, "w");
-		}
-
-		fprintf(s_file, "nolock_queue size too big usleep 10us..\n");
-		fflush(s_file);
+		debugLog("nolock_queue size too big usleep 10us..\n");
     }
 
     queue->_queue_tail->_nxt_node->_data = data;

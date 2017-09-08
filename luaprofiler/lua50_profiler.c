@@ -265,40 +265,43 @@ static int profiler_resume(lua_State *L) {
   return 0;
 }
 
-//static char modFunFilter[50][2][128];
-//static int modFunFilterNum = 0;
-//
-//static void iterate_and_save(lua_State *L, int index)
-//{
-//	int modFunFilterIndex = 0;
-//
-//	lua_pushvalue(L, index);
-//	// stack now contains: -1 => table  
-//	lua_pushnil(L);
-//	// stack now contains: -1 => nil; -2 => table  
-//	while (lua_next(L, -2))
-//	{
-//		// stack now contains: -1 => value; -2 => key; -3 => table  
-//		// copy the key so that lua_tostring does not modify the original  
-//		lua_pushvalue(L, -2);
-//		// stack now contains: -1 => key; -2 => value; -3 => key; -4 => table  
-//		strcpy(modFunFilter[modFunFilterIndex][0], lua_tostring(L, -1));
-//		strcpy(modFunFilter[modFunFilterIndex][1], lua_tostring(L, -2));
-//		++modFunFilterIndex;
-//		//printf("%s => %s\n", lua_tostring(L, -1), lua_tostring(L, -2));
-//		// pop value + copy of key, leaving original key  
-//		lua_pop(L, 2);
-//		// stack now contains: -1 => key; -2 => table  
-//	}
-//	// stack now contains: -1 => table (when lua_next returns 0 it pops the key  
-//	// but does not push anything.)  
-//	// Pop table  
-//	lua_pop(L, 1);
-//	modFunFilterNum = modFunFilterIndex;
-//	// Stack is now the same as it was on entry to this function  
-//}
+static void iterate_and_save(lua_State *L, int index)
+{
+	int modFunFilterIndex = 0;
 
+	lua_pushvalue(L, index);
+	// stack now contains: -1 => table  
+	lua_pushnil(L);
 
+	static char* delims = "|";
+	static char buff[256];
+	// stack now contains: -1 => nil; -2 => table  
+	while (lua_next(L, -2))
+	{
+		// stack now contains: -1 => value; -2 => key; -3 => table  
+		// copy the key so that lua_tostring does not modify the original  
+		lua_pushvalue(L, -2);
+		// stack now contains: -1 => key; -2 => value; -3 => key; -4 => table  
+
+		strcpy(buff, lua_tostring(L, -2));
+		char* result = strtok(buff, delims);
+		strcpy(modFunFilter[modFunFilterIndex][1], result);
+		result = strtok(NULL, delims);
+		strcpy(modFunFilter[modFunFilterIndex][0], result);
+		
+		//printf("%s => %s\n", lua_tostring(L, -1), lua_tostring(L, -2));
+		// pop value + copy of key, leaving original key  
+		lua_pop(L, 2);
+		// stack now contains: -1 => key; -2 => table  
+		++modFunFilterIndex;
+	}
+	// stack now contains: -1 => table (when lua_next returns 0 it pops the key  
+	// but does not push anything.)  
+	// Pop table  
+	lua_pop(L, 1);
+	modFunFilterNum = modFunFilterIndex;
+	// Stack is now the same as it was on entry to this function  
+}
 
 
 static int profiler_start(lua_State *L) {
@@ -307,13 +310,22 @@ static int profiler_start(lua_State *L) {
 		return 0;
 	}
 
+#ifdef DEBUG_PROFILER
+	logfile = fopen("Testlog.log", "w");
+	if (!logfile) {
+		return 0;
+	}
+#endif
 	
 	lprofP_STATE* S;
 	const char* outfile;
 
-	/*lua_getfield(L, LUA_GLOBALSINDEX, "ProfFilterTable");
-	iterate_and_save(L, -1);
-	lua_pop(L, 1);*/
+	lua_getfield(L, LUA_GLOBALSINDEX, "ProfFilterTable");
+	if (lua_istable(L, -1))
+	{
+		iterate_and_save(L, -1);
+	}
+	lua_pop(L, 1);
 
 	lua_pushlightuserdata(L, &profstate_id);
 	lua_gettable(L, LUA_REGISTRYINDEX);
@@ -438,7 +450,13 @@ static int profiler_stop(lua_State *L) {
 		lua_pushboolean(L, 0); 
 	}
 	is_start = 0;
-  return 1;
+
+#ifdef DEBUG_PROFILER
+	if (logfile)
+		fclose(logfile);
+#endif
+
+    return 1;
 }
 
 static int profiler_frame(lua_State *L)

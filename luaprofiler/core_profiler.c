@@ -54,20 +54,6 @@ static lprofS_STACK_RECORD *info;
 static float function_call_time;
 
 
-/* output a line to the log file, using 'printf()' syntax */
-/* assume the timer is off */
-/*
-static void output(const char *format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  vfprintf(outf, format, ap);
-  va_end(ap);
-
-  // write now to avoid delays when the timer is on 
-  fflush(outf);
-}
-*/
-
 /* do not allow a string with '\n' and '|' (log file format reserved chars) */
 /* - replace them by ' '                                                    */
 static void formats(char *s) {
@@ -84,24 +70,29 @@ static void formats(char *s) {
 	将lua api的操作记录剔除
 	2016-08-10 lennon.c
 */
-int filter_lua_api(char* func_name)
+
+char modFunFilter[50][2][128];
+int modFunFilterNum = 0;
+
+int filter_lua_api(char* func_name, char* mod_name)
 {
 	/*static char *lua_api[] = {
 		"assert", "unpack", "__index", "__newindex", "setmetatable", "getmetatable", "rawget", "type",
 		"remove", NULL };*/
 
-	static char *lua_api[] = {
-		"Tick" };
+	/*static char *lua_api[] = {
+		"Tick" };*/
 
-	char **p = lua_api;
-	while (*p != NULL)
+	static char *sharp = "*";
+
+	int i = 0;
+	while (i < modFunFilterNum)
 	{
-		if (strcmp(*p, func_name) == 0)
+		if ((strcmp(modFunFilter[i][0], sharp) == 0 || strcmp(modFunFilter[i][0], func_name) == 0) && (strcmp(modFunFilter[i][1], sharp) == 0 || !mod_name || strcmp(modFunFilter[i][1], mod_name) == 0))
 		{
 			return 1;
 		}
-
-		p++;
+		i++;
 	}
 
 	return 0;
@@ -111,7 +102,7 @@ int filter_lua_api(char* func_name)
 void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedefined, int currentline,char* what, char* cFun, lprof_DebugInfo* dbg_info) 
 {
   // 过滤lua api操作 2016-08-10 lennon.c
-	if (!func_name || !filter_lua_api(func_name))
+	if (!func_name || !filter_lua_api(func_name, dbg_info->p_source))
 		return;
 
   S->stack_level++;
@@ -125,7 +116,7 @@ void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedef
 int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 	// 过滤lua api操作 2016-08-10 lennon.c
 	
-	if (!dbg_info->p_name || !filter_lua_api(dbg_info->p_name))
+	if (!dbg_info->p_name || !filter_lua_api(dbg_info->p_name, dbg_info->p_source))
 		return 0;
 
 	if (!S->stack_top)

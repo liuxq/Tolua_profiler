@@ -52,6 +52,19 @@ void output(const char *format, ...) {
 
 }
 
+void debugLog(const char *format, ...) {
+
+#ifdef DEBUG_PROFILER
+	va_list ap;
+	va_start(ap, format);
+	vfprintf(logfile, format, ap);
+	va_end(ap);
+
+	fflush(logfile);
+#endif
+
+}
+
 void lprofP_outputToFile(FILE* file,const char* format,...)
 {
 	if(file)
@@ -247,17 +260,3 @@ void lprofP_open()
 	pOutputBuffer = (char*)malloc(sizeof(char)*nOutputBufferSize);
 	memset(pOutputBuffer,0x0,sizeof(char)*nOutputBufferSize);
 }
-
-/*
-void lprofP_outputToFile(FILE* file, const char* format, ...)
-{
-	if (file)
-	{
-		va_list ap;
-		va_start(ap, format);
-		vfprintf(file, format, ap);
-		va_end(ap);
-		fflush(file);
-	}
-}
-*/

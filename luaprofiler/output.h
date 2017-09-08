@@ -9,7 +9,13 @@
 #include <assert.h>
 #include "lp.h"
 
+#define DEBUG_PROFILER
+
 FILE *outf;
+
+#ifdef DEBUG_PROFILER
+FILE *logfile;
+#endif
 
 typedef void(*pfnoutputCallback)(const char* info);
 

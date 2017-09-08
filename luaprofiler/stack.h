@@ -123,6 +123,7 @@ lprofT_NODE* lprofT_addchild(lprofT_NODE* pParent, lprofT_NODE* pChild);
 void lprofT_free(lprofT_NODE* p);
 void freeNode(lprofT_NODE* p);
 void output(const char *format, ...);
+void debugLog(const char *format, ...);
 void lprofT_tojson();
 //void lprofT_tojson2(lprofT_NODE* p);
 //void lprofT_tojson(lprofT_NODE* p);

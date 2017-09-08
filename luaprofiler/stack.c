@@ -542,11 +542,6 @@ cJSON* frameTojson(int id, int unitytime, double frame_cs)
 
 void lprofT_frame(int id, int unitytime, double framecs,double hook_cost_cs, int hook_cnt)
 {
-
-
-
-	static FILE* s_error_file = NULL;
-
 	cJSON* root = frameTojson(id, unitytime, framecs);
 	if (root)
 	{
@@ -567,20 +562,11 @@ void lprofT_frame(int id, int unitytime, double framecs,double hook_cost_cs, int
 	stat_hook_call_cnt = 0;
 	if(g_S->stack_level != 0 || g_S->stack_top != NULL || pTreeRoot != NULL){
 
-		if(s_error_file == NULL){
-			char tmpbuf[256];
-
-			sprintf(tmpbuf, "luaprofiler.error.%d", (int)(GETPID()));
-
-			s_error_file = fopen(tmpbuf, "w");
-		}
-
-
-		fprintf(s_error_file, "\r\n\r\n\r\nerror occurs fid:%d g_S->stack_level=%d g_S->stack_top=%p pTreeRoot=%p\n", id, g_S->stack_level, g_S->stack_top, pTreeRoot);
+		debugLog("\r\n\r\n\r\nerror occurs fid:%d g_S->stack_level=%d g_S->stack_top=%p pTreeRoot=%p\n", id, g_S->stack_level, g_S->stack_top, pTreeRoot);
 
 		while(g_S->stack_top){
 			
-			fprintf(s_error_file, "%s %s %d\n",g_S->stack_top->file_defined,  g_S->stack_top->function_name,  g_S->stack_top->current_line);
+			debugLog("%s %s %d\n", g_S->stack_top->file_defined, g_S->stack_top->function_name, g_S->stack_top->current_line);
 
 			lprof_DebugInfo dbg_info;
 			
@@ -593,8 +579,6 @@ void lprofT_frame(int id, int unitytime, double framecs,double hook_cost_cs, int
 			pTreeRoot = NULL;
 		}
 		g_S->stack_level = 0;
-
-		fflush(s_error_file);
 	}
 
 	

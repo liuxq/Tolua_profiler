@@ -21,6 +21,8 @@ Design (using the Lua callhook mechanism) :
 
 //int lprofP_output(lprofP_STATE* S);
 
+extern char modFunFilter[50][2][128];
+extern int modFunFilterNum;
 
 
 
