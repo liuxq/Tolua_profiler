@@ -560,22 +560,22 @@ void lprofT_frame(int id, int unitytime, double framecs,double hook_cost_cs, int
 
 	stat_hook_cost_ts = 0;
 	stat_hook_call_cnt = 0;
-	if(g_S->stack_level != 0 || g_S->stack_top != NULL || pTreeRoot != NULL){
+	if (g_S->stack_level != 0 || g_S->stack_top != NULL || pTreeRoot != NULL){
 
 		debugLog("\r\n\r\n\r\nerror occurs fid:%d g_S->stack_level=%d g_S->stack_top=%p pTreeRoot=%p\n", id, g_S->stack_level, g_S->stack_top, pTreeRoot);
 
-		while(g_S->stack_top){
-			
+		while (g_S->stack_top){
+
 			debugLog("%s %s %d\n", g_S->stack_top->file_defined, g_S->stack_top->function_name, g_S->stack_top->current_line);
 
 			lprof_DebugInfo dbg_info;
-			
+
 			lprofS_pop(&(g_S->stack_top), &dbg_info);
-			
+
 		}
 
-		if(pTreeRoot != NULL){
-		 	lprofT_free(pTreeRoot);
+		if (pTreeRoot != NULL){
+			lprofT_free(pTreeRoot);
 			pTreeRoot = NULL;
 		}
 		g_S->stack_level = 0;
