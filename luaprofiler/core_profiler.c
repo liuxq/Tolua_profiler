@@ -84,10 +84,14 @@ int filter_lua_api(char* func_name, char* mod_name)
 		"Tick" };*/
 
 	static char *sharp = "*";
+	static char *cCall = "=[C]";
 
 	int i = 0;
 	while (i < modFunFilterNum)
 	{
+		if (strcmp(mod_name, cCall) == 0)
+			break;
+
 		if ((strcmp(modFunFilter[i][0], sharp) == 0 || strcmp(modFunFilter[i][0], func_name) == 0) && (strcmp(modFunFilter[i][1], sharp) == 0 || !mod_name || strcmp(modFunFilter[i][1], mod_name) == 0))
 		{
 			return 1;
@@ -106,6 +110,9 @@ void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedef
 		return;
 
   S->stack_level++;
+
+  //debugLog("in  m:%s f:%s stack:%d\n", dbg_info->p_source, dbg_info->p_name, S->stack_level);
+
   lprofM_enter_function(S, file, func_name, linedefined, currentline,what, cFun, dbg_info);
   
 }
@@ -128,6 +135,8 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 
 	S->stack_level--;
 
+	//debugLog("out  m:%s f:%s stack:%d\n", dbg_info->p_source, dbg_info->p_name, S->stack_level);
+
 	/* 0: do not resume the parent function's timer yet... */
 	info = lprofM_leave_function(S, 0, dbg_info);
 
@@ -135,6 +144,7 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 		lprofT_print();*/
 	if (S->stack_level == 0)
 	{
+		//debugLog("lprofT_tojson!!\n");
 		lprofT_tojson();
 		//lprofT_tojson2();
 	}
