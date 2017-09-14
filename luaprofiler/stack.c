@@ -122,6 +122,9 @@ void lprofT_pop(lprof_DebugInfo* dbg_info)
 		assert(pTreeNode->pNode);
 		pTreeNode->pNode->local_time = (float)lprofC_get_interval(&pTreeNode->pNode->time_maker_local_time_begin, &dbg_info->currenttime);
 		pTreeNode->pNode->time_maker_local_time_end = dbg_info->currenttime;
+
+		pTreeNode->pNode->mem_end = dbg_info->currentMem;
+
 		if (pTreeNode->pNode->stack_level <= 1)
 			//dTotalTimeConsuming += pTreeNode->pNode->local_time;
 			dTotalTimeConsuming += lprofC_get_interval(&pTreeNode->pNode->time_maker_local_time_begin, &pTreeNode->pNode->time_maker_local_time_end);
@@ -242,6 +245,8 @@ lprofS_STACK lprofT_assigningStack(lprofS_STACK pDest,lprofS_STACK pSource)
 		pDest->time_maker_local_time_end = pSource->time_maker_local_time_end;
 		pDest->time_marker_function_local_time = pSource->time_marker_function_local_time;
 		pDest->time_marker_function_total_time = pSource->time_marker_function_total_time;
+		pDest->mem_begin = pSource->mem_begin;
+		pDest->mem_end = pSource->mem_end;
 		if(pSource->what)
 		{
 			pDest->what = (char*)malloc(strlen(pSource->what) + 1);
@@ -262,6 +267,8 @@ void lprofT_add(lprofS_STACK pChild, lprof_DebugInfo* dbg_info)
 	p->stack_level = p->pNode->stack_level;
 
 	p->pNode->time_maker_local_time_begin = dbg_info->currenttime;
+	p->pNode->mem_begin = dbg_info->currentMem;
+
 	if (p->pNode->stack_level > nMaxStackLevel)
 		nMaxStackLevel = p->pNode->stack_level;
 	if (pTreeRoot == NULL)
@@ -402,6 +409,7 @@ cJSON* treeTojson(lprofT_NODE* p, calltype precalltype,double* pdLuaConsuming, d
 		cJSON_AddItemToObject(root, "info", cJSON_CreateString(p->pNode->what));
 		cJSON_AddItemToObject(root, "bt", cJSON_CreateNumber(beginTime));
 		cJSON_AddItemToObject(root, "et", cJSON_CreateNumber(endTime));
+		cJSON_AddItemToObject(root, "al", cJSON_CreateNumber(p->pNode->mem_end - p->pNode->mem_begin));
  		source = p->pNode->file_defined;
 		if (source == NULL || strcmp(source,"") == 0) {
 			source = "(string)";
@@ -510,10 +518,19 @@ void lprofT_tojson_thread()
 }
 
 
-cJSON* frameTojson(int id, int unitytime, double frame_cs)
+cJSON* frameTojson(int id, int unitytime)
 {
 	cJSON* root = NULL;
+
+	static int s_has_set_ts = 0;
+	static double lastFrameTime;
+
 	double frametime = lprofC_get_seconds2(&time_maker_golbal_start);
+
+	if (!s_has_set_ts){
+		lastFrameTime = frametime;
+		s_has_set_ts = 1;
+	}
 
 	root = cJSON_CreateObject();
 	cJSON_AddItemToObject(root, "fid", cJSON_CreateNumber(id));
@@ -526,7 +543,7 @@ cJSON* frameTojson(int id, int unitytime, double frame_cs)
 		double dFrameInterval = 0.0;
 		cJSON_AddItemToObject(root, "lc", cJSON_CreateNumber(dPreFrameLuaConsuming));
 		cJSON_AddItemToObject(root, "fc", cJSON_CreateNumber(dPreFrameFunConsuming));
-		cJSON_AddItemToObject(root, "fi", cJSON_CreateNumber(frame_cs));
+		cJSON_AddItemToObject(root, "fi", cJSON_CreateNumber(frametime - lastFrameTime));
 		cJSON_AddItemToObject(root, "stFlag", cJSON_CreateFalse());
 	}
 	else
@@ -534,21 +551,21 @@ cJSON* frameTojson(int id, int unitytime, double frame_cs)
 		cJSON_AddItemToObject(root, "stFlag", cJSON_CreateTrue());
 	}
 	 
+	lastFrameTime = frametime;
 	 
 
 	return root;
 
 }
 
-void lprofT_frame(int id, int unitytime, double framecs,double hook_cost_cs, int hook_cnt)
+void lprofT_frame(int id, int unitytime, double hook_cost_cs, int hook_cnt)
 {
-	cJSON* root = frameTojson(id, unitytime, framecs);
+	cJSON* root = frameTojson(id, unitytime);
 	if (root)
 	{
 		cJSON_AddItemToObject(root, "hook_ts", cJSON_CreateNumber(hook_cost_cs));
 		cJSON_AddItemToObject(root, "hook_cnt", cJSON_CreateNumber(hook_cnt));
-		cJSON_AddItemToObject(root, "frame_cs", cJSON_CreateNumber(framecs));		
-	
+
 		char *jstring = cJSON_Print(root);
 		lprofP_addFrame(id, jstring);
 		//output(jstring);

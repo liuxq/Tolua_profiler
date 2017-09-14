@@ -111,7 +111,7 @@ void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedef
 
   S->stack_level++;
 
-  //debugLog("in  m:%s f:%s stack:%d\n", dbg_info->p_source, dbg_info->p_name, S->stack_level);
+  //debugLog("in  m:%s f:%s mem:%f\n", dbg_info->p_source, dbg_info->p_name, dbg_info->currentMem);
 
   lprofM_enter_function(S, file, func_name, linedefined, currentline,what, cFun, dbg_info);
   
@@ -135,6 +135,7 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 
 	S->stack_level--;
 
+	//debugLog("out  m:%s f:%s mem:%f\n", dbg_info->p_source, dbg_info->p_name, dbg_info->currentMem);
 	//debugLog("out  m:%s f:%s stack:%d\n", dbg_info->p_source, dbg_info->p_name, S->stack_level);
 
 	/* 0: do not resume the parent function's timer yet... */

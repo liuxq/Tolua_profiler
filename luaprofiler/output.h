@@ -9,7 +9,8 @@
 #include <assert.h>
 #include "lp.h"
 
-#define DEBUG_PROFILER
+//#define DEBUG_PROFILER
+//#define SEND_UNITY
 
 FILE *outf;
 

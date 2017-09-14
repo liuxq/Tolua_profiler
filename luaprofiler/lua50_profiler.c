@@ -99,7 +99,7 @@ void handle_dbg_info(lprof_DebugInfo* dbg_info) {
 
 	}
 	else if (dbg_info->type == FRAME) {
-		lprofT_frame(dbg_info->frameid, dbg_info->unitytime, dbg_info->framecs, dbg_info->hook_cost_cs, dbg_info->hook_call_cnt);
+		lprofT_frame(dbg_info->frameid, dbg_info->unitytime, dbg_info->hook_cost_cs, dbg_info->hook_call_cnt);
 	}
 	else {
 
@@ -181,6 +181,7 @@ static void callhook(lua_State *L, lua_Debug *ar) {
   dbg_info->currentline = currentline;
   dbg_info->ccallname[0] = '\0';
   dbg_info->linedefined = ar->linedefined;
+  dbg_info->currentMem = (double)lua_gc(L, LUA_GCCOUNTB, 0) + (double)(lua_gc(L, LUA_GCCOUNT, 0) * 1024);
   
   lprofC_start_timer2(&dbg_info->currenttime);
 
@@ -954,7 +955,6 @@ LUA_API void frame_profiler(int id, int unitytime)
 		dbg_info->type = FRAME;
 		dbg_info->frameid = id;
 		dbg_info->unitytime = unitytime;
-		dbg_info->framecs = lprofC_get_seconds2(&s_last_ts);
 		dbg_info->hook_cost_cs = stat_hook_cost_ts;
 		dbg_info->hook_call_cnt = stat_hook_call_cnt;
 		stat_hook_cost_ts = 0;

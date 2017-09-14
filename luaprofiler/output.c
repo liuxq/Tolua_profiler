@@ -32,12 +32,14 @@ extern "C" {
 
 void sendUnityMessage(const char* pMsg)
 {
+#ifdef SEND_UNITY
 #ifdef __cplusplus
 	if (pUnityMethod && pUnityObject)
 		UnitySendMessage(pUnityObject, pUnityMethod, pMsg);
 #endif
 	if (pOutputCallback)
 		pOutputCallback(pMsg);
+#endif
 }
 
 void output(const char *format, ...) {
@@ -175,10 +177,7 @@ void lprofP_output()
 				memset(psz, 0x0, nLen);
 				strcpy(psz, pOut->frame);
 				strcat(psz, ",\n");
-				if (pOutputCallback)
-				{
-					pOutputCallback(psz);
-				}
+				sendUnityMessage(psz);
 				lprofP_toBuffer(psz,nLen);
 				free(psz);
 			}

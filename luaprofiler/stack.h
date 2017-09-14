@@ -51,9 +51,10 @@ typedef struct _lprof_DebugInfo {
   int frameid;
   int unitytime;
 
-  double framecs;
   double hook_cost_cs;
   int    hook_call_cnt;
+  double currentMem;
+
 }lprof_DebugInfo;
 
 
@@ -82,6 +83,8 @@ struct lprofS_sSTACK_RECORD {
 	int stack_level;
 	LARGE_INTEGER time_maker_local_time_begin;
 	LARGE_INTEGER time_maker_local_time_end;
+	double mem_begin;
+	double mem_end;
 	lprofS_STACK_RECORD *next;
 };
 
@@ -115,7 +118,7 @@ void lprofT_add(lprofS_STACK pChild, lprof_DebugInfo* dbg_info);
 void lprofT_pop();
 //void lprofT_output(lprofT_NODE* p);
 //void lprofT_print();
-void lprofT_frame(int id,int unitytime, double frame_cs,double hook_cost_cs, int hook_cnt);
+void lprofT_frame(int id,int unitytime, double hook_cost_cs, int hook_cnt);
 lprofT_NODE* lprofT_createNode();
 lprofS_STACK lprofT_assigningStack(lprofS_STACK pDest,lprofS_STACK pSource);
 lprofT_NODE* lprofT_assigningNode(lprofT_NODE* pDest,lprofT_NODE* pSource);
