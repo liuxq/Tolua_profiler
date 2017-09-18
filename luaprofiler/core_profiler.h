@@ -23,7 +23,7 @@ Design (using the Lua callhook mechanism) :
 
 extern char modFunFilter[50][2][128];
 extern int modFunFilterNum;
-
+extern int FunFilterLevel;
 
 
 #define LPROF_COPY_LUA_DEBUG_INFO(lpDebug, luaDbg, member, LEN) \

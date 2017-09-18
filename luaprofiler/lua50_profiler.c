@@ -151,6 +151,7 @@ void dispatch_dbg_info(lprof_DebugInfo* dbg_info) {
 /* called by Lua (via the callhook mechanism) */
 static void callhook(lua_State *L, lua_Debug *ar) {
 
+  static int profilerLevelOffset = 0;
   LARGE_INTEGER nBeginTime ;
 
   lprofC_start_timer2(&nBeginTime);
@@ -175,6 +176,31 @@ static void callhook(lua_State *L, lua_Debug *ar) {
 	  lua_pop(L, 1);
 	  return;
   }
+
+  //过滤begin和endsample
+  static char *beginSample = "p_begin";
+  static char *endSample = "p_end";
+  int isSampleFunc = 0;
+  if (ar->name && strcmp(ar->name, beginSample) == 0)
+  {
+	  if (ar->event == 0)
+	  {
+		  isSampleFunc = 1;
+	  }
+	  else
+	  {
+		  ++profilerLevelOffset;
+		  lua_pop(L, 1);
+		  return;
+	  }
+  }
+
+  if (ar->name && ar->event == 0 && strcmp(ar->name, endSample) == 0)
+  {
+	  --profilerLevelOffset;
+	  lua_pop(L, 1);
+	  return;
+  }
   
   lua_Debug sdebug;
   int level = 0;
@@ -191,26 +217,43 @@ static void callhook(lua_State *L, lua_Debug *ar) {
   dbg_info->ccallname[0] = '\0';
   dbg_info->linedefined = ar->linedefined;
   dbg_info->currentMem = (double)lua_gc(L, LUA_GCCOUNTB, 0) + (double)(lua_gc(L, LUA_GCCOUNT, 0) * 1024);
+  if(isSampleFunc)
+  {
+	  static char *defaultSampleMod = "sampler";
+	  strcpy(dbg_info->source, defaultSampleMod);
+
+	  lua_getlocal(L, ar, 1);
+	  const char* v = lua_tostring(L, -1);
+	  if (v)
+	  {
+		  strcpy(dbg_info->name, v);
+		  
+	  }
+	  else
+	  {
+		  static char *defaultSample = "sample";
+		  strcpy(dbg_info->name, defaultSample);
+	  }
+	  lua_pop(L, 1);
+  }
   
   lprofC_start_timer2(&dbg_info->currenttime);
 
-#if defined(linux)
-  if(ar->source &&  strcmp(ar->source, "=[C]") == 0)
-  { 
-  		dbg_info->ccallname[99] = '\0'; 
-     	void* cfun = lua_tocfunction(L, -1);
-		Dl_info info;
-		dladdr(cfun, &info);        
-    	int xx =  (int)((unsigned  int)cfun - (unsigned int )info.dli_fbase);
-        snprintf(dbg_info->ccallname, 98, "(CFUN(%s 0x%x %p))\0",get_base_name( info.dli_fname), xx,  cfun );
-  }
-#endif
+//#if defined(linux)
+//  if(ar->source &&  strcmp(ar->source, "=[C]") == 0)
+//  { 
+//  		dbg_info->ccallname[99] = '\0'; 
+//     	void* cfun = lua_tocfunction(L, -1);
+//		Dl_info info;
+//		dladdr(cfun, &info);        
+//    	int xx =  (int)((unsigned  int)cfun - (unsigned int )info.dli_fbase);
+//        snprintf(dbg_info->ccallname, 98, "(CFUN(%s 0x%x %p))\0",get_base_name( info.dli_fname), xx,  cfun );
+//  }
+//#endif
 
   lua_pop(L, 1);
 
-  //stackIndex = lua_gettop(L);
-
-  dbg_info->level = level;
+  dbg_info->level = level + profilerLevelOffset;
 
   //debugLog("%d  m:%s f:%s level:%d\n", dbg_info->event, dbg_info->p_source, dbg_info->p_name, level);
 
@@ -338,6 +381,13 @@ static int profiler_start(lua_State *L) {
 	if (lua_istable(L, -1))
 	{
 		iterate_and_save(L, -1);
+	}
+	lua_pop(L, 1);
+
+	lua_getfield(L, LUA_GLOBALSINDEX, "ProfFilterLevel");
+	if (lua_isnumber(L, -1))
+	{
+		FunFilterLevel = lua_tonumber(L, -1) + 1;
 	}
 	lua_pop(L, 1);
 

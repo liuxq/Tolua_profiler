@@ -66,13 +66,9 @@ static void formats(char *s) {
   }
 }
 
-/*
-	将lua api的操作记录剔除
-	2016-08-10 lennon.c
-*/
-
 char modFunFilter[50][2][128];
 int modFunFilterNum = 0;
+int FunFilterLevel = -1;
 
 int filter_lua_api(char* func_name, char* mod_name)
 {
@@ -80,20 +76,24 @@ int filter_lua_api(char* func_name, char* mod_name)
 		"assert", "unpack", "__index", "__newindex", "setmetatable", "getmetatable", "rawget", "type",
 		"remove", NULL };*/
 
-	/*static char *lua_api[] = {
-		"Tick" };*/
-
 	static char *sharp = "*";
 	
 	int i = 0;
 	while (i < modFunFilterNum)
 	{
-		if ((strcmp(modFunFilter[i][0], sharp) == 0 || strcmp(modFunFilter[i][0], func_name) == 0) && (strcmp(modFunFilter[i][1], sharp) == 0 || !mod_name || strcmp(modFunFilter[i][1], mod_name) == 0))
+		if ((strcmp(modFunFilter[i][0], sharp) == 0 || strcmp(modFunFilter[i][0], func_name) == 0) && 
+			(strcmp(modFunFilter[i][1], sharp) == 0 || (mod_name && strstr(mod_name, modFunFilter[i][1]))))
 		{
 			return 1;
 		}
 		i++;
 	}
+
+	//sampler
+	static char *beginSample = "p_begin";
+	static char *endSample = "p_end";
+	if (strcmp(beginSample, func_name) == 0 || strcmp(endSample, func_name) == 0)
+		return 1;
 
 	return 0;
 }
@@ -102,6 +102,9 @@ int filter_lua_api(char* func_name, char* mod_name)
 void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedefined, int currentline,char* what, char* cFun, lprof_DebugInfo* dbg_info) 
 {
 	if (!func_name || !filter_lua_api(func_name, dbg_info->p_source))
+		return;
+
+	if (dbg_info->level > FunFilterLevel)
 		return;
 
 	if (S->stack_top && dbg_info->level <= S->stack_top->level)
@@ -122,6 +125,9 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 	// 过滤lua api操作 2016-08-10 lennon.c
 	
 	if (!dbg_info->p_name || !filter_lua_api(dbg_info->p_name, dbg_info->p_source))
+		return 0;
+
+	if (dbg_info->level > FunFilterLevel)
 		return 0;
 
 	if (!S->stack_top)
