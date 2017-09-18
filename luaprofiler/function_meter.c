@@ -212,6 +212,7 @@ void lprofM_enter_function(lprofP_STATE* S, char *file_defined, char *fcn_name, 
   newf.interval_time = 0.0;
   newf.current_time = lprofC_get_current();
   newf.stack_level = S->stack_level;
+  newf.level = dbg_info->level;
   lprofS_push(&(S->stack_top), newf, dbg_info);
 }
 
@@ -233,6 +234,15 @@ lprofS_STACK_RECORD *lprofM_leave_function(lprofP_STATE* S, int isto_resume, lpr
   if (isto_resume)
     lprofM_resume_local_time(S);
   return &leave_ret;
+}
+
+lprofS_STACK_RECORD *lprofM_pop_invalid_function(lprofP_STATE* S) {
+
+	ASSERT(S->stack_top, "leave_function: stack_top null");
+
+	leave_ret = lprofS_pop_release(&(S->stack_top));
+
+	return &leave_ret;
 }
 
 

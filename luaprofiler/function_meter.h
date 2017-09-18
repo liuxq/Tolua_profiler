@@ -59,6 +59,7 @@ void lprofM_enter_function(lprofP_STATE* S, char *file_defined, char *fcn_name, 
 /* warning: use it before another call to this function,  */
 /* because the funcinfo will be overwritten               */
 lprofS_STACK_RECORD *lprofM_leave_function(lprofP_STATE* S, int isto_resume, lprof_DebugInfo* dbg_info);
+lprofS_STACK_RECORD *lprofM_pop_invalid_function(lprofP_STATE* S);
 
 /* init stack */
 lprofP_STATE* lprofM_init();

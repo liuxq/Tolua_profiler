@@ -135,6 +135,29 @@ void lprofT_pop(lprof_DebugInfo* dbg_info)
 	}
 }
 
+
+//删除节点
+void lprofT_pop_release()
+{
+	if (pTreeNode->pParent)
+	{
+		lprofT_NODE* pParent = pTreeNode->pParent;
+		pTreeNode = pTreeNode->pParent;
+
+		/*if (pParent->nChildCount > 0)
+		{
+		lprofT_NODE* ppTmp = (lprofT_NODE*)realloc(pParent->pChild, (pParent->nChildCount - 1) * sizeof(lprofT_NODE));
+		assert(ppTmp);
+		if (ppTmp)
+		{
+		pParent->pChild = ppTmp;
+		}
+		}*/
+		pParent->nChildCount--;
+	}
+
+}
+
 lprofT_NODE* lprofT_createNode()
 {
 	int i = 0;
@@ -196,6 +219,35 @@ lprofS_STACK_RECORD lprofS_pop(lprofS_STACK *p, lprof_DebugInfo* dbg_info)
         return r;
 }
 
+lprofS_STACK_RECORD lprofS_pop_release(lprofS_STACK *p)
+{
+	lprofS_STACK_RECORD r;
+	lprofS_STACK q;
+
+	r = **p;
+	q = *p;
+	*p = (*p)->next;
+
+
+	if (q->function_name)
+	{
+		free(q->function_name);
+
+	}
+	if (q->what)
+	{
+		free(q->what);
+	}
+
+	if (q->file_defined){
+		free(q->file_defined);
+	}
+
+	free(q);
+	lprofT_pop_release();
+	return r;
+}
+
 lprofT_NODE* lprofT_assigningNode(lprofT_NODE* pDest,lprofT_NODE* pSource)
 {
 	if(pDest && pSource)
@@ -241,6 +293,7 @@ lprofS_STACK lprofT_assigningStack(lprofS_STACK pDest,lprofS_STACK pSource)
 			strcpy(pDest->source_code,pSource->source_code);
 		}
 		pDest->stack_level = pSource->stack_level;
+		pDest->level = pSource->level;
 		pDest->time_maker_local_time_begin = pSource->time_maker_local_time_begin;
 		pDest->time_maker_local_time_end = pSource->time_maker_local_time_end;
 		pDest->time_marker_function_local_time = pSource->time_marker_function_local_time;

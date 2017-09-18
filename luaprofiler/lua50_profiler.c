@@ -158,9 +158,6 @@ static void callhook(lua_State *L, lua_Debug *ar) {
   int currentline;
   lua_Debug previous_ar;
 
-  int stackIndex = -1;
-
-
   if (lua_getstack(L, 1, &previous_ar) == 0) {
     currentline = -1;
   } else {
@@ -170,8 +167,20 @@ static void callhook(lua_State *L, lua_Debug *ar) {
       
   lua_getinfo(L, "nSf", ar);
 
+  //过滤c调用，因为没有return
+  static char *cCall = "=[C]";
+  if (strcmp(ar->source, cCall) == 0)
+  {
+	  //debugLog("=[c]return %d  m:%s f:%s\n", ar->event, ar->source, ar->name);
+	  lua_pop(L, 1);
+	  return;
+  }
   
-
+  lua_Debug sdebug;
+  int level = 0;
+  while (lua_getstack(L, level, &sdebug)) {
+	  level++;
+  }
   lprof_DebugInfo* dbg_info = (lprof_DebugInfo*)malloc(sizeof(lprof_DebugInfo));
   dbg_info->type = FUNCTION_HOOK;
   LPROF_COPY_LUA_DEBUG_INFO(dbg_info, ar, name, LP_MAX_NAME_LEN);
@@ -200,6 +209,10 @@ static void callhook(lua_State *L, lua_Debug *ar) {
   lua_pop(L, 1);
 
   //stackIndex = lua_gettop(L);
+
+  dbg_info->level = level;
+
+  //debugLog("%d  m:%s f:%s level:%d\n", dbg_info->event, dbg_info->p_source, dbg_info->p_name, level);
 
   dispatch_dbg_info(dbg_info);
 
@@ -414,7 +427,8 @@ static int profiler_start(lua_State *L) {
 	dbg_info->currentline = -1;
 	dbg_info->ccallname[0] = '\0';
  
-	dispatch_dbg_info(dbg_info);
+	//不要记录了
+	//dispatch_dbg_info(dbg_info);
 
 	//lprofP_callhookIN(S, "profiler_start", "(C)", -1, -1,"C", "\0");
 	is_start = 1;

@@ -54,6 +54,7 @@ typedef struct _lprof_DebugInfo {
   double hook_cost_cs;
   int    hook_call_cnt;
   double currentMem;
+  int	 level;
 
 }lprof_DebugInfo;
 
@@ -81,6 +82,7 @@ struct lprofS_sSTACK_RECORD {
 	double interval_time;
 	time_t current_time;
 	int stack_level;
+	int level;
 	LARGE_INTEGER time_maker_local_time_begin;
 	LARGE_INTEGER time_maker_local_time_end;
 	double mem_begin;
@@ -111,6 +113,7 @@ struct lprofP_sSTATE {
 
 void lprofS_push(lprofS_STACK *p, lprofS_STACK_RECORD r, lprof_DebugInfo* dbg_info);
 lprofS_STACK_RECORD lprofS_pop(lprofS_STACK *p, lprof_DebugInfo* dbg_info);
+lprofS_STACK_RECORD lprofS_pop_release(lprofS_STACK *p);
 
 void lprofT_init();
 void lprofT_start();

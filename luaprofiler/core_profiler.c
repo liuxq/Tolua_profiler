@@ -84,14 +84,10 @@ int filter_lua_api(char* func_name, char* mod_name)
 		"Tick" };*/
 
 	static char *sharp = "*";
-	static char *cCall = "=[C]";
-
+	
 	int i = 0;
 	while (i < modFunFilterNum)
 	{
-		if (strcmp(mod_name, cCall) == 0)
-			break;
-
 		if ((strcmp(modFunFilter[i][0], sharp) == 0 || strcmp(modFunFilter[i][0], func_name) == 0) && (strcmp(modFunFilter[i][1], sharp) == 0 || !mod_name || strcmp(modFunFilter[i][1], mod_name) == 0))
 		{
 			return 1;
@@ -105,15 +101,17 @@ int filter_lua_api(char* func_name, char* mod_name)
 /* computes new stack and new timer */
 void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedefined, int currentline,char* what, char* cFun, lprof_DebugInfo* dbg_info) 
 {
-  // 过滤lua api操作 2016-08-10 lennon.c
 	if (!func_name || !filter_lua_api(func_name, dbg_info->p_source))
 		return;
 
-  S->stack_level++;
+	if (S->stack_top && dbg_info->level <= S->stack_top->level)
+		return;
 
-  //debugLog("in  m:%s f:%s mem:%f\n", dbg_info->p_source, dbg_info->p_name, dbg_info->currentMem);
+	S->stack_level++;
 
-  lprofM_enter_function(S, file, func_name, linedefined, currentline,what, cFun, dbg_info);
+	//debugLog("in  m:%s f:%s level:%d curToplevel:%d stack:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level, S->stack_top ? S->stack_top->level : -1, S->stack_level);
+
+	lprofM_enter_function(S, file, func_name, linedefined, currentline, what, cFun, dbg_info);
   
 }
 
@@ -133,10 +131,15 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 		return 0;
 	}
 
+	while (dbg_info->level < S->stack_top->level)
+	{
+		lprofM_pop_invalid_function(S);
+		S->stack_level--;
+	}
+	
 	S->stack_level--;
 
-	//debugLog("out  m:%s f:%s mem:%f\n", dbg_info->p_source, dbg_info->p_name, dbg_info->currentMem);
-	//debugLog("out  m:%s f:%s stack:%d\n", dbg_info->p_source, dbg_info->p_name, S->stack_level);
+	//debugLog("out  m:%s f:%s level:%d curToplevel:%d stack:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level, S->stack_top->level, S->stack_level);
 
 	/* 0: do not resume the parent function's timer yet... */
 	info = lprofM_leave_function(S, 0, dbg_info);
@@ -147,7 +150,6 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 	{
 		//debugLog("lprofT_tojson!!\n");
 		lprofT_tojson();
-		//lprofT_tojson2();
 	}
 		
 	/* ... now it's ok to resume the timer */
