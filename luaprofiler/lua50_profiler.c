@@ -219,7 +219,7 @@ static void callhook(lua_State *L, lua_Debug *ar) {
   dbg_info->currentMem = (double)lua_gc(L, LUA_GCCOUNTB, 0) + (double)(lua_gc(L, LUA_GCCOUNT, 0) * 1024);
   if(isSampleFunc)
   {
-	  static char *defaultSampleMod = "sampler";
+	  static char *defaultSampleMod = "p_sampler";
 	  strcpy(dbg_info->source, defaultSampleMod);
 
 	  lua_getlocal(L, ar, 1);

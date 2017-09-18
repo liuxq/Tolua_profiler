@@ -90,9 +90,9 @@ int filter_lua_api(char* func_name, char* mod_name)
 	}
 
 	//sampler
-	static char *beginSample = "p_begin";
+	static char *sampleMod = "p_sampler";
 	static char *endSample = "p_end";
-	if (strcmp(beginSample, func_name) == 0 || strcmp(endSample, func_name) == 0)
+	if (mod_name && strcmp(sampleMod, mod_name) == 0 || strcmp(endSample, func_name) == 0)
 		return 1;
 
 	return 0;
