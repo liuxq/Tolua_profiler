@@ -6,8 +6,6 @@
 #include "output.h"
 
 
-int nWriteFile = 1;
-
 int nMaxCacheNode = 2;
 int nCacheNode = 0;
 lprof_PREVNODE sPrevNode = { 0,0 };
@@ -32,14 +30,12 @@ extern "C" {
 
 void sendUnityMessage(const char* pMsg)
 {
-#ifdef SEND_UNITY
 #ifdef __cplusplus
 	if (pUnityMethod && pUnityObject)
 		UnitySendMessage(pUnityObject, pUnityMethod, pMsg);
 #endif
 	if (pOutputCallback)
 		pOutputCallback(pMsg);
-#endif
 }
 
 void output(const char *format, ...) {
@@ -82,8 +78,6 @@ void lprofP_outputToFile(FILE* file,const char* format,...)
 
 void lprofP_toBuffer(char* str,int length)
 {
-	if (!nWriteFile)
-		return;
 	if(nBufferWrited + length >= nOutputBufferSize)
 	{
 		if(nBufferWrited > 0)
@@ -177,8 +171,10 @@ void lprofP_output()
 				memset(psz, 0x0, nLen);
 				strcpy(psz, pOut->frame);
 				strcat(psz, ",\n");
-				sendUnityMessage(psz);
-				lprofP_toBuffer(psz,nLen);
+				if (!iRealtimeOrFile)
+					sendUnityMessage(psz);
+				else
+					lprofP_toBuffer(psz,nLen);
 				free(psz);
 			}
 			nLen = (int)strlen(pOut->data) + 3;
@@ -188,8 +184,10 @@ void lprofP_output()
 				memset(psz, 0x0, nLen);
 				strcpy(psz, pOut->data);
 				strcat(psz, ",\n");
-				sendUnityMessage(psz);
-				lprofP_toBuffer(psz,nLen);
+				if (!iRealtimeOrFile)
+					sendUnityMessage(psz);
+				else
+					lprofP_toBuffer(psz, nLen);
 				free(psz);
 			}
 			sPrevNode.id = pOut->id;
@@ -208,8 +206,10 @@ void lprofP_output()
 					memset(psz, 0x0, nLen);
 					strcpy(psz, pOut->frame);
 					strcat(psz, ",\n");
-					sendUnityMessage(psz);
-					lprofP_toBuffer(psz,nLen);
+					if (!iRealtimeOrFile)
+						sendUnityMessage(psz);
+					else
+						lprofP_toBuffer(psz, nLen);
 					free(psz);
 					sPrevNode.id = pOut->id;
 					sPrevNode.data = 0;

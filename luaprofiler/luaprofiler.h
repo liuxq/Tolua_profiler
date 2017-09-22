@@ -20,11 +20,11 @@ extern "C"
 {
 #endif
 LUA_API void init_profiler(lua_State *L);
-//LUA_API int add_profiler(int x,int y);
 LUA_API void frame_profiler(int id, int unitytime);
 LUA_API void register_callback(void* pcallback);
-LUA_API int isregister_callback();
+LUA_API int  isregister_callback();
 LUA_API void unregister_callback();
+LUA_API void luaprofiler_setting(int realtimeOfFile, int filterMask, int filterLevel);
 #ifdef __cplusplus
 }
 #endif

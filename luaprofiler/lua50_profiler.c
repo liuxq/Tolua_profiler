@@ -330,7 +330,7 @@ static void iterate_and_save(lua_State *L, int index)
 	// stack now contains: -1 => table  
 	lua_pushnil(L);
 
-	static char* delims = "|";
+	static char* delims = ".";
 	static char buff[256];
 	// stack now contains: -1 => nil; -2 => table  
 	while (lua_next(L, -2))
@@ -381,13 +381,6 @@ static int profiler_start(lua_State *L) {
 	if (lua_istable(L, -1))
 	{
 		iterate_and_save(L, -1);
-	}
-	lua_pop(L, 1);
-
-	lua_getfield(L, LUA_GLOBALSINDEX, "ProfFilterLevel");
-	if (lua_isnumber(L, -1))
-	{
-		FunFilterLevel = lua_tonumber(L, -1) + 1;
 	}
 	lua_pop(L, 1);
 
@@ -993,7 +986,15 @@ LUA_API void init_profiler(lua_State *L)
 	pOutputCallback = NULL;
 	pUnityObject = NULL;
 	pUnityMethod = NULL;
+	iRealtimeOrFile = 0;
 	lprofT_init();
+}
+
+LUA_API void luaprofiler_setting(int realtimeOfFile, int filterMask, int filterLevel)
+{
+	iRealtimeOrFile = realtimeOfFile;
+	ifilterMask = filterMask;
+	iFunFilterLevel = filterLevel;
 }
 
 LUA_API void frame_profiler(int id, int unitytime)

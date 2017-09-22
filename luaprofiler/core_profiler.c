@@ -68,7 +68,8 @@ static void formats(char *s) {
 
 char modFunFilter[50][2][128];
 int modFunFilterNum = 0;
-int FunFilterLevel = -1;
+int iFunFilterLevel = -1;
+int ifilterMask = 0;
 
 int filter_lua_api(char* func_name, char* mod_name)
 {
@@ -81,12 +82,18 @@ int filter_lua_api(char* func_name, char* mod_name)
 	int i = 0;
 	while (i < modFunFilterNum)
 	{
+		if (((ifilterMask >> i) & 0x1) == 0)
+		{
+			++i;
+			continue;
+		}
+
 		if ((strcmp(modFunFilter[i][0], sharp) == 0 || strcmp(modFunFilter[i][0], func_name) == 0) && 
 			(strcmp(modFunFilter[i][1], sharp) == 0 || (mod_name && strstr(mod_name, modFunFilter[i][1]))))
 		{
 			return 1;
 		}
-		i++;
+		++i;
 	}
 
 	//sampler
@@ -98,13 +105,23 @@ int filter_lua_api(char* func_name, char* mod_name)
 	return 0;
 }
 
+int curBaseFuncLevel = 2;
+
 /* computes new stack and new timer */
 void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedefined, int currentline,char* what, char* cFun, lprof_DebugInfo* dbg_info) 
 {
-	if (!func_name || !filter_lua_api(func_name, dbg_info->p_source))
+	if (!func_name)
 		return;
 
-	if (dbg_info->level > FunFilterLevel)
+	if (!filter_lua_api(func_name, dbg_info->p_source) && !S->stack_top)
+		return;
+
+	if (!S->stack_top)
+	{
+		curBaseFuncLevel = dbg_info->level;
+	}
+
+	if (dbg_info->level > curBaseFuncLevel + iFunFilterLevel)
 		return;
 
 	if (S->stack_top && dbg_info->level <= S->stack_top->level)
@@ -112,7 +129,7 @@ void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedef
 
 	S->stack_level++;
 
-	//debugLog("in  m:%s f:%s level:%d curToplevel:%d stack:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level, S->stack_top ? S->stack_top->level : -1, S->stack_level);
+	//debugLog("in  m:%s f:%s level:%d curBaseFuncLevel:%d stack:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level, curBaseFuncLevel, S->stack_level);
 
 	lprofM_enter_function(S, file, func_name, linedefined, currentline, what, cFun, dbg_info);
   
@@ -121,17 +138,19 @@ void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedef
 
 /* pauses all timers to write a log line and computes the new stack */
 /* returns if there is another function in the stack */
-int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
-	// 过滤lua api操作 2016-08-10 lennon.c
-	
-	if (!dbg_info->p_name || !filter_lua_api(dbg_info->p_name, dbg_info->p_source))
+int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) 
+{
+	if (!dbg_info->p_name || dbg_info->level > curBaseFuncLevel + iFunFilterLevel)
 		return 0;
 
-	if (dbg_info->level > FunFilterLevel)
-		return 0;
+	/*if (!filter_lua_api(dbg_info->p_name, dbg_info->p_source) && !S->stack_top)
+		return 0;*/
 
 	if (!S->stack_top)
+	{
+		curBaseFuncLevel = 2;
 		return 0;
+	}
 
 	if (S->stack_level == 0) {
 		return 0;
@@ -146,6 +165,7 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info) {
 	S->stack_level--;
 
 	//debugLog("out  m:%s f:%s level:%d curToplevel:%d stack:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level, S->stack_top->level, S->stack_level);
+	//debugLog("out  m:%s f:%s level:%d curBaseFuncLevel:%d stack:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level, curBaseFuncLevel, S->stack_level);
 
 	/* 0: do not resume the parent function's timer yet... */
 	info = lprofM_leave_function(S, 0, dbg_info);

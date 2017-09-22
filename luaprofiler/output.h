@@ -10,7 +10,6 @@
 #include "lp.h"
 
 //#define DEBUG_PROFILER
-//#define SEND_UNITY
 
 FILE *outf;
 
@@ -21,6 +20,8 @@ FILE *logfile;
 typedef void(*pfnoutputCallback)(const char* info);
 
 pfnoutputCallback pOutputCallback;
+
+int iRealtimeOrFile;
 
 
 char* pUnityObject;
