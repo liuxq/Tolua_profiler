@@ -121,6 +121,8 @@ void lprofP_callhookIN(lprofP_STATE* S, char *func_name, char *file, int linedef
 		curBaseFuncLevel = dbg_info->level;
 	}
 
+	//debugLog("in begin! m:%s f:%s level:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level);
+
 	if (dbg_info->level > curBaseFuncLevel + iFunFilterLevel)
 		return;
 
@@ -156,12 +158,18 @@ int lprofP_callhookOUT(lprofP_STATE* S, lprof_DebugInfo* dbg_info)
 		return 0;
 	}
 
-	while (dbg_info->level < S->stack_top->level)
+	//debugLog("out begin! m:%s f:%s level:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level);
+	while (S->stack_level > 1 && dbg_info->level < S->stack_top->level)
 	{
 		lprofM_pop_invalid_function(S);
 		S->stack_level--;
 	}
-	
+
+	if (dbg_info->level != S->stack_top->level)
+	{
+		debugLog("donot match! topLevel is %d curLevel is %d", S->stack_top->level, dbg_info->level);
+	}
+
 	S->stack_level--;
 
 	//debugLog("out  m:%s f:%s level:%d curToplevel:%d stack:%d\n", dbg_info->p_source, dbg_info->p_name, dbg_info->level, S->stack_top->level, S->stack_level);

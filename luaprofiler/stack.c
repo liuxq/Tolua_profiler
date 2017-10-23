@@ -571,7 +571,7 @@ void lprofT_tojson_thread()
 }
 
 
-cJSON* frameTojson(int id, int unitytime)
+cJSON* frameTojson(int id, int mem)
 {
 	cJSON* root = NULL;
 
@@ -588,7 +588,7 @@ cJSON* frameTojson(int id, int unitytime)
 	root = cJSON_CreateObject();
 	cJSON_AddItemToObject(root, "fid", cJSON_CreateNumber(id));
 	cJSON_AddItemToObject(root, "ft", cJSON_CreateNumber(frametime));
-	cJSON_AddItemToObject(root, "fut", cJSON_CreateNumber(unitytime));
+	cJSON_AddItemToObject(root, "fm", cJSON_CreateNumber(mem));
 	
 	//cJSON_AddItemToObject(root, "writefileTime", cJSON_CreateNumber(dTotalWriteConsuming));
 	if (dPreFrameLuaConsuming > 0)
@@ -611,9 +611,9 @@ cJSON* frameTojson(int id, int unitytime)
 
 }
 
-void lprofT_frame(int id, int unitytime, double hook_cost_cs, int hook_cnt)
+void lprofT_frame(int id, int mem, double hook_cost_cs, int hook_cnt)
 {
-	cJSON* root = frameTojson(id, unitytime);
+	cJSON* root = frameTojson(id, mem);
 	if (root)
 	{
 		cJSON_AddItemToObject(root, "hook_ts", cJSON_CreateNumber(hook_cost_cs));

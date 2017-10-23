@@ -49,10 +49,9 @@ double stat_hook_cost_ts = 0;
 double stat_frame_cost_ts = 0;
 int    stat_hook_call_cnt = 0;
 
-static int g_multithread = 0;
 lprofP_STATE* g_S = NULL;
-// �������У�һ��һ��������
-QUEUE g_nolock_queue;
+
+double    curMem = 0;
 
 //g_fHookAllocFile = NULL;
 //g_iHookFunc = 0;
@@ -79,8 +78,6 @@ static void mark_object(lua_State *L, lua_State *dL, const void * parent, const 
 #endif
 
 
-DWORD WINAPI thread_run(void* data);
-
 static FILE* g_fMemorySnapshot = NULL;
 //static int profiler_clear(lua_State *L);
 
@@ -99,7 +96,7 @@ void handle_dbg_info(lprof_DebugInfo* dbg_info) {
 
 	}
 	else if (dbg_info->type == FRAME) {
-		lprofT_frame(dbg_info->frameid, dbg_info->unitytime, dbg_info->hook_cost_cs, dbg_info->hook_call_cnt);
+		lprofT_frame(dbg_info->frameid, dbg_info->currentMem, dbg_info->hook_cost_cs, dbg_info->hook_call_cnt);
 	}
 	else {
 
@@ -138,13 +135,7 @@ static const char* get_base_name(const char* fullpath){
 
 
 void dispatch_dbg_info(lprof_DebugInfo* dbg_info) {
-
-	if (g_multithread == 1) {
-		queue_push_without_alloc(&g_nolock_queue, dbg_info);
-	}
-	else {
-		handle_dbg_info(dbg_info);
-	}
+	handle_dbg_info(dbg_info);
 }
 
 
@@ -217,6 +208,9 @@ static void callhook(lua_State *L, lua_Debug *ar) {
   dbg_info->ccallname[0] = '\0';
   dbg_info->linedefined = ar->linedefined;
   dbg_info->currentMem = (double)lua_gc(L, LUA_GCCOUNTB, 0) + (double)(lua_gc(L, LUA_GCCOUNT, 0) * 1024);
+
+  curMem = dbg_info->currentMem;
+
   if(isSampleFunc)
   {
 	  static char *defaultSampleMod = "p_sampler";
@@ -395,11 +389,6 @@ static int profiler_start(lua_State *L) {
 	if(lua_gettop(L) >= 1)
 		outfile = luaL_checkstring(L, 1);
 
-	if (lua_gettop(L) >= 2)
-		g_multithread = lua_tointeger(L, 2);
-
-	printf("\n[profiler_start] outfile=%s,g_multithread=%d\n", outfile, g_multithread);
-
 #if defined(linux)	
     #include <sys/types.h>
     #include <unistd.h>
@@ -438,20 +427,6 @@ static int profiler_start(lua_State *L) {
 	/* the following statement is to simulate how the execution stack is */
 	/* supposed to be by the time the profiler is activated when loaded  */
 	/* as a library.                                                     */
-
-	if (g_multithread == 1) {
-
-		queue_init(&g_nolock_queue, 0);
-		queue_reserved(&g_nolock_queue, NONLOCK_QUEUE_SIZE);
-
-	#if defined(linux)
-		pthread_t newthread; 
-		pthread_create(&newthread, 0, (void *(*)(void *))thread_run, 0);
-	#else
-		CreateThread(NULL, 0, thread_run, NULL, 0, NULL);
-	#endif
-
-	}
 
 
 	lprof_DebugInfo* dbg_info = (lprof_DebugInfo*)malloc(sizeof(lprof_DebugInfo));
@@ -1022,6 +997,7 @@ LUA_API void frame_profiler(int id, int unitytime)
 		dbg_info->unitytime = unitytime;
 		dbg_info->hook_cost_cs = stat_hook_cost_ts;
 		dbg_info->hook_call_cnt = stat_hook_call_cnt;
+		dbg_info->currentMem = curMem;
 		stat_hook_cost_ts = 0;
 		stat_hook_call_cnt = 0;
 
@@ -1059,28 +1035,6 @@ LUA_API void unregister_callback()
 	pUnityObject = pUnityMethod = NULL;
 
 }
-
-
-DWORD WINAPI thread_run(void* data)
-{
-
-	while(1){
-
-		lprof_DebugInfo* dbg_info = NULL;
-
-		queue_pop_without_dealloc(&g_nolock_queue, (void**)&dbg_info);
-
-		if(NULL != dbg_info){
-			handle_dbg_info(dbg_info);
-			continue;
-		}
-
-		SLEEP_SHORT_TIME();
-	}
-
-	return 0;
-}
-
 
 
 
